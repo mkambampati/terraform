@@ -17,6 +17,12 @@ variable "ingress_rule" {
             to_port=22
             protocal="tcp"
             cidr_block=["0.0.0.0/0"]
+        },
+        {
+            from_port=8080
+            to_port=8080
+            protocal="tcp"
+            cidr_block=["0.0.0.0/0"]
         }
         
 

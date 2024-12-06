@@ -8,7 +8,7 @@ resource "aws_vpc" "VPC_J" {
 
 resource "aws_subnet" "Public_Subnet" {
   vpc_id = aws_vpc.VPC_J.id
-  cidr_block = "10.0.192.0/18"
+  cidr_block = "10.0.0.0/24"
   tags = {
     Name="Jenkins_Sub"
   }
@@ -33,18 +33,17 @@ resource "aws_route_table_association" "Rt_ass" {
   subnet_id = aws_subnet.Public_Subnet.id
 }
 
-# resource "aws_iam_instance_profile" "ec2_role" {
-#   name = "test_profile"
-#   role = "arn:aws:iam::637423172345:instance-profile/EC2_Admin"
-# }
+
 
 resource "aws_instance" "EC2_J" {
+  depends_on = [ aws_iam_instance_profile.EC2_Profile, aws_security_group.Jenkins_SG ]
     subnet_id = aws_subnet.Public_Subnet.id
     ami = "ami-012967cc5a8c9f891"
     instance_type = "t2.medium"
-    key_name = "terraform_key"
-    iam_instance_profile = "arn:aws:iam::637423172345:instance-profile/EC2_Admin"
+    key_name = "terraform-key"
+    iam_instance_profile = aws_iam_instance_profile.EC2_Profile.name
     vpc_security_group_ids = [ aws_security_group.Jenkins_SG.id ]
+    associate_public_ip_address = true
 
     tags = {
       Name="Ec2_J"
@@ -53,7 +52,8 @@ resource "aws_instance" "EC2_J" {
 }
 
 resource "aws_security_group" "Jenkins_SG" {
-    name = "Jenkins_Sg"
+  vpc_id = aws_vpc.VPC_J.id
+    name = "Jenkins_SG"
     dynamic "ingress" {
      for_each = var.ingress_rule 
      content {
@@ -83,7 +83,7 @@ resource "null_resource" "install_Jenkins" {
     connection {
       type        = "ssh"
       user        = "ec2-user"
-      private_key = "terraform_key" # Path to your private key
+      private_key = "terraform-key" # Path to your private key
       host        = aws_instance.EC2_J.public_ip
     }
 
